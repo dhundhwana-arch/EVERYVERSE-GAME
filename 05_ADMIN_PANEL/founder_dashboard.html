@@ -3,37 +3,78 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>LIFEVERSE 2070 — Private Founder Dashboard</title>
+<title>LIFEVERSE 2070 — Private Founder &amp; Moderation Dashboard</title>
 <style>
-  body { font-family: system-ui, sans-serif; background: #0E1013; color: #F9FAFB; margin: 0; padding: 36px 24px; max-width: 960px; margin-inline: auto; }
-  h1 { color: #FCD34D; margin-bottom: 4px; }
-  .panel { border: 1px solid #262B35; background: #141820; padding: 20px; border-radius: 8px; margin-top: 20px; }
-  input, button { padding: 10px 14px; border-radius: 6px; margin-right: 8px; }
-  input { background: #0E1013; color: #F9FAFB; border: 1px solid #262B35; }
-  button { background: #38BDF8; color: #0E1013; border: none; font-weight: 700; cursor: pointer; }
-  pre { overflow-x: auto; font-size: 13px; color: #D1D5DB; }
+  :root { --bg:#0E1013; --card:#141820; --line:#262B35; --ink:#F9FAFB; --cyan:#38BDF8; --amber:#FCD34D; }
+  body { font-family: system-ui, sans-serif; background:var(--bg); color:var(--ink); margin:0; padding:32px 20px; max-width:1040px; margin-inline:auto; }
+  h1 { color:var(--amber); margin:0 0 6px; }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:8px; padding:18px; margin-top:16px; }
+  input, select { padding:9px; border-radius:6px; border:1px solid var(--line); background:var(--bg); color:var(--ink); margin:4px 6px 4px 0; }
+  button { background:var(--cyan); color:#0E1013; border:none; padding:9px 14px; font-weight:700; border-radius:6px; cursor:pointer; }
+  pre { background:var(--bg); border:1px solid var(--line); padding:12px; border-radius:6px; overflow:auto; max-height:300px; font-size:12px; color:#D1D5DB; }
 </style>
 </head>
 <body>
-  <h1>Founder &amp; Moderation Dashboard</h1>
-  <p>CREATED BY DIVYESH BAMBHANIYA · Role-Based Access Control (Founder / Moderator Only)</p>
-  <div class="panel">
-    <input id="api" value="http://127.0.0.1:8000/api/v1" placeholder="API Base URL">
-    <input id="token" type="password" placeholder="Founder JWT Token">
-    <button onclick="loadDashboard()">Load Overview &amp; Moderation Queue</button>
-    <pre id="out">Authenticate as Founder to inspect metrics, audit logs, and moderation events.</pre>
+  <h1>Founder &amp; Moderation Control Center</h1>
+  <p style="color:#9CA3AF;">CREATED BY DIVYESH BAMBHANIYA · RBAC Protected (Founder / Moderator Only · Passwords Never Exposed)</p>
+
+  <div class="card">
+    <h3>Founder Login</h3>
+    <input id="api" value="http://127.0.0.1:8000/api/v1" style="width:260px;">
+    <input id="fUser" value="divyesh_bambhaniya" placeholder="Founder Username">
+    <input id="fPass" type="password" placeholder="Founder Password">
+    <button onclick="founderLogin()">Sign In &amp; Load Overview</button>
+    <pre id="overviewOut">Sign in as Founder to view system metrics, audit logs, and moderation events.</pre>
   </div>
-  <script>
-    async function loadDashboard() {
-      const api = document.getElementById('api').value.replace(/\/$/, '');
-      const token = document.getElementById('token').value;
-      const headers = { Authorization: 'Bearer ' + token };
+
+  <div class="card">
+    <h3>Review Player Appeal</h3>
+    <input id="evId" placeholder="Moderation Event ID (mod_...)">
+    <select id="decision">
+      <option value="approved_overturned">Approve Appeal (Overturn &amp; Unsuspend)</option>
+      <option value="upheld">Uphold Moderation Decision</option>
+    </select>
+    <button onclick="reviewAppeal()">Submit Review Decision</button>
+    <pre id="appealOut">Pending review action.</pre>
+  </div>
+
+<script>
+  let FOUNDER_TOKEN = "";
+  function apiBase() { return document.getElementById('api').value.replace(/\/$/, ''); }
+  async function founderLogin() {
+    try {
+      const res = await fetch(apiBase() + '/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username: document.getElementById('fUser').value, password: document.getElementById('fPass').value })
+      });
+      const auth = await res.json();
+      if (!auth.access_token) {
+        document.getElementById('overviewOut').textContent = JSON.stringify(auth, null, 2);
+        return;
+      }
+      FOUNDER_TOKEN = auth.access_token;
+      const headers = { Authorization: 'Bearer ' + FOUNDER_TOKEN };
       const [ov, mod] = await Promise.all([
-        fetch(api + '/admin/overview', { headers }).then(r => r.json()),
-        fetch(api + '/moderation/dashboard', { headers }).then(r => r.json()),
+        fetch(apiBase() + '/admin/overview', { headers }).then(r => r.json()),
+        fetch(apiBase() + '/moderation/dashboard', { headers }).then(r => r.json()),
       ]);
-      document.getElementById('out').textContent = JSON.stringify({ overview: ov, moderation: mod }, null, 2);
+      document.getElementById('overviewOut').textContent = JSON.stringify({ overview: ov, moderation: mod }, null, 2);
+    } catch (e) {
+      document.getElementById('overviewOut').textContent = 'Error: ' + e.message;
     }
-  </script>
+  }
+  async function reviewAppeal() {
+    const res = await fetch(apiBase() + '/moderation/review-appeal', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + FOUNDER_TOKEN },
+      body: JSON.stringify({
+        moderation_event_id: document.getElementById('evId').value,
+        appeal_decision: document.getElementById('decision').value
+      })
+    });
+    document.getElementById('appealOut').textContent = JSON.stringify(await res.json(), null, 2);
+  }
+</script>
 </body>
 </html>

@@ -9,3 +9,8 @@ RETRY_PROMPT,Your journey is not over! Want to try again or explore another care
 WARNING_1,Warning 1: Your message was blocked for violating community safety rules.,ચેતવણી ૧: સુરક્ષા નિયમોના ઉલ્લંઘન બદલ તમારો સંદેશ રોકવામાં આવ્યો છે.,चेतावनी 1: सामुदायिक सुरक्षा नियमों के उल्लंघन के कारण आपका संदेश रोक दिया गया है।
 WARNING_2,Warning 2: Temporary chat restriction applied.,ચેતવણી ૨: અસ્થાયી ચેટ પ્રતિબંધ લાગુ કરવામાં આવ્યો છે.,चेतावनी 2: अस्थायी चैट प्रतिबंध लागू किया गया है।
 APPEAL_SUBMITTED,Your moderation appeal has been submitted for human review.,તમારી અપીલ માનવ સમીક્ષા માટે મોકલવામાં આવી છે.,आपकी अपील मानव समीक्षा के लिए भेज दी गई है।
+NPC_PROMPT,Choose how you would like to interact:,તમે કેવી રીતે વાતચીત કરવા માંગો છો તે પસંદ કરો:,चुनें कि आप कैसे बातचीत करना चाहते हैं:
+NPC_GREET,Greet,નમસ્તે કહો,नमस्ते कहें
+NPC_JOKE,Hear a Joke,રમૂજ સાંભળો,मज़ाक सुनें
+NPC_HELP,Help with Quest,મદદ કરો (ક્વેસ્ટ),मदद करें (क्वेस्ट)
+BTN_CLOSE,Close,બંધ કરો,बंद करें

@@ -1,12 +1,14 @@
-[gd_scene load_steps=6 format=3]
+[gd_scene load_steps=11 format=3]
 
 [ext_resource type="Script" path="res://scripts/PlayerController.gd" id="1_player"]
+[ext_resource type="Script" path="res://scripts/NpcInteractable.gd" id="2_npc"]
+[ext_resource type="Script" path="res://scripts/DialogueUI.gd" id="3_dlg"]
 
 [sub_resource type="BoxShape3D" id="BoxShape3D_ground"]
-size = Vector3(60, 1, 60)
+size = Vector3(80, 1, 80)
 
 [sub_resource type="BoxMesh" id="BoxMesh_ground"]
-size = Vector3(60, 1, 60)
+size = Vector3(80, 1, 80)
 
 [sub_resource type="CapsuleShape3D" id="CapsuleShape3D_player"]
 radius = 0.4
@@ -16,10 +18,25 @@ height = 1.8
 radius = 0.4
 height = 1.8
 
+[sub_resource type="SphereMesh" id="SphereMesh_dome"]
+radius = 7.0
+height = 10.0
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_fountain"]
+top_radius = 3.2
+bottom_radius = 3.6
+height = 1.2
+
+[sub_resource type="BoxMesh" id="BoxMesh_cafe"]
+size = Vector3(10, 4.5, 8)
+
+[sub_resource type="SphereShape3D" id="SphereShape3D_interact"]
+radius = 3.0
+
 [node name="SuryanagarPlaza" type="Node3D"]
 
 [node name="SunLight" type="DirectionalLight3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 0.707107, 0.707107, 0, -0.707107, 0.707107, 0, 20, 0)
+transform = Transform3D(1, 0, 0, 0, 0.707107, 0.707107, 0, -0.707107, 0.707107, 0, 24, 0)
 
 [node name="Ground" type="StaticBody3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.5, 0)
@@ -30,8 +47,60 @@ shape = SubResource("BoxShape3D_ground")
 [node name="MeshInstance3D" type="MeshInstance3D" parent="Ground"]
 mesh = SubResource("BoxMesh_ground")
 
+[node name="Landmarks" type="Node3D" parent="."]
+
+[node name="NavabharatUniversityDome" type="MeshInstance3D" parent="Landmarks"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 18, 4.5, -18)
+mesh = SubResource("SphereMesh_dome")
+
+[node name="CivicFountain" type="MeshInstance3D" parent="Landmarks"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6, -10)
+mesh = SubResource("CylinderMesh_fountain")
+
+[node name="SkylineSolarCafe" type="MeshInstance3D" parent="Landmarks"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -16, 2.25, -14)
+mesh = SubResource("BoxMesh_cafe")
+
+[node name="NPCs" type="Node3D" parent="."]
+
+[node name="DrMeera" type="Area3D" parent="NPCs"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 14, 1.0, -12)
+script = ExtResource("2_npc")
+npc_id = "dr_meera"
+npc_display_name = "Dr. Meera Patel"
+
+[node name="Mesh" type="MeshInstance3D" parent="NPCs/DrMeera"]
+mesh = SubResource("CapsuleMesh_player")
+
+[node name="Zone" type="CollisionShape3D" parent="NPCs/DrMeera"]
+shape = SubResource("SphereShape3D_interact")
+
+[node name="RameshKaka" type="Area3D" parent="NPCs"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -12, 1.0, -10)
+script = ExtResource("2_npc")
+npc_id = "kaka_chai"
+npc_display_name = "Ramesh Kaka"
+
+[node name="Mesh" type="MeshInstance3D" parent="NPCs/RameshKaka"]
+mesh = SubResource("CapsuleMesh_player")
+
+[node name="Zone" type="CollisionShape3D" parent="NPCs/RameshKaka"]
+shape = SubResource("SphereShape3D_interact")
+
+[node name="InspectorKabir" type="Area3D" parent="NPCs"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2, 1.0, -7)
+script = ExtResource("2_npc")
+npc_id = "officer_kabir"
+npc_display_name = "Inspector Kabir Rao"
+
+[node name="Mesh" type="MeshInstance3D" parent="NPCs/InspectorKabir"]
+mesh = SubResource("CapsuleMesh_player")
+
+[node name="Zone" type="CollisionShape3D" parent="NPCs/InspectorKabir"]
+shape = SubResource("SphereShape3D_interact")
+
 [node name="Player" type="CharacterBody3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.0, 0)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.0, 4)
 script = ExtResource("1_player")
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="Player"]
@@ -45,3 +114,47 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.4, 0)
 
 [node name="Camera3D" type="Camera3D" parent="Player/CameraPivot"]
 transform = Transform3D(1, 0, 0, 0, 0.939693, 0.34202, 0, -0.34202, 0.939693, 0, 2.0, 5.5)
+
+[node name="HUD" type="CanvasLayer" parent="."]
+
+[node name="DialoguePanel" type="PanelContainer" parent="HUD"]
+anchors_preset = 12
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 40.0
+offset_top = -180.0
+offset_right = -40.0
+offset_bottom = -20.0
+script = ExtResource("3_dlg")
+
+[node name="VBox" type="VBoxContainer" parent="HUD/DialoguePanel"]
+layout_mode = 2
+
+[node name="SpeakerLabel" type="Label" parent="HUD/DialoguePanel/VBox"]
+layout_mode = 2
+text = "NPC"
+
+[node name="DialogueText" type="Label" parent="HUD/DialoguePanel/VBox"]
+layout_mode = 2
+text = "NPC_PROMPT"
+autowrap_mode = 3
+
+[node name="Buttons" type="HBoxContainer" parent="HUD/DialoguePanel/VBox"]
+layout_mode = 2
+
+[node name="GreetBtn" type="Button" parent="HUD/DialoguePanel/VBox/Buttons"]
+layout_mode = 2
+text = "NPC_GREET"
+
+[node name="JokeBtn" type="Button" parent="HUD/DialoguePanel/VBox/Buttons"]
+layout_mode = 2
+text = "NPC_JOKE"
+
+[node name="HelpBtn" type="Button" parent="HUD/DialoguePanel/VBox/Buttons"]
+layout_mode = 2
+text = "NPC_HELP"
+
+[node name="CloseBtn" type="Button" parent="HUD/DialoguePanel/VBox/Buttons"]
+layout_mode = 2
+text = "BTN_CLOSE"

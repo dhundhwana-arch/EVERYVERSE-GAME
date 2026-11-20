@@ -3,39 +3,115 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>LIFEVERSE 2070 — Official Portal | CREATED BY DIVYESH BAMBHANIYA</title>
+<title>LIFEVERSE 2070 — Interactive Player Portal | CREATED BY DIVYESH BAMBHANIYA</title>
 <style>
-  body { font-family: system-ui, sans-serif; background: #0E1013; color: #F9FAFB; margin: 0; padding: 40px 24px; max-width: 900px; margin-inline: auto; line-height: 1.6; }
-  h1 { color: #38BDF8; margin-bottom: 8px; }
-  .credit { color: #FCD34D; font-family: monospace; font-size: 14px; margin-bottom: 24px; }
-  .box { border: 1px solid #262B35; padding: 20px; border-radius: 8px; margin-top: 20px; background: #141820; }
-  button { background: #38BDF8; color: #0E1013; border: none; padding: 10px 18px; font-weight: 700; border-radius: 6px; cursor: pointer; }
-  input { padding: 10px; border-radius: 6px; border: 1px solid #262B35; background: #0E1013; color: #F9FAFB; width: 260px; }
+  :root { --bg:#0E1013; --card:#141820; --line:#262B35; --ink:#F9FAFB; --mute:#9CA3AF; --cyan:#38BDF8; --amber:#FCD34D; }
+  body { font-family: system-ui, sans-serif; background:var(--bg); color:var(--ink); margin:0; padding:32px 20px; max-width:1040px; margin-inline:auto; }
+  h1 { color:var(--cyan); margin:0 0 4px; }
+  .credit { color:var(--amber); font-family:monospace; font-size:13px; margin-bottom:24px; }
+  .grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(300px, 1fr)); gap:18px; }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:8px; padding:18px; }
+  input, select { width:100%; box-sizing:border-box; padding:9px; margin:6px 0; border-radius:6px; border:1px solid var(--line); background:var(--bg); color:var(--ink); }
+  button { background:var(--cyan); color:#0E1013; border:none; padding:9px 14px; font-weight:700; border-radius:6px; cursor:pointer; margin:6px 6px 0 0; }
+  pre { background:var(--bg); border:1px solid var(--line); padding:10px; border-radius:6px; overflow:auto; max-height:220px; font-size:12px; color:#D1D5DB; }
 </style>
 </head>
 <body>
-  <h1>LIFEVERSE 2070</h1>
-  <div class="credit">CREATED BY DIVYESH BAMBHANIYA</div>
-  <p>An Original Open-World Life Simulation, Virtual Society &amp; Career Universe supporting Gujarati, Hindi, and English.</p>
+  <h1>LIFEVERSE 2070 — Suryanagar Interactive Portal</h1>
+  <div class="credit">CREATED BY DIVYESH BAMBHANIYA · v0.3.0</div>
 
-  <div class="box">
-    <h3>Live Backend Health Check</h3>
-    <input id="apiUrl" value="http://127.0.0.1:8000" placeholder="Backend URL">
-    <button onclick="checkHealth()">Check API Status</button>
-    <pre id="statusOut">Click to verify backend connection...</pre>
+  <div class="card" style="margin-bottom:18px;">
+    <strong>Backend URL:</strong>
+    <input id="apiBase" value="http://127.0.0.1:8000" placeholder="https://your-render-url.onrender.com">
+    <button onclick="callApi('/health', 'GET', null, 'healthOut')">Check /health</button>
+    <pre id="healthOut">Ready.</pre>
   </div>
 
-  <script>
-    async function checkHealth() {
-      const url = document.getElementById('apiUrl').value.replace(/\/$/, '');
-      const out = document.getElementById('statusOut');
-      try {
-        const res = await fetch(url + '/health');
-        out.textContent = JSON.stringify(await res.json(), null, 2);
-      } catch (e) {
-        out.textContent = 'Connection failed: ' + e.message;
-      }
+  <div class="grid">
+    <div class="card">
+      <h3>1. Account &amp; Character</h3>
+      <input id="uName" placeholder="Username (e.g. aarav_2070)">
+      <input id="uPass" type="password" placeholder="Password (min 6 chars)">
+      <select id="uLang"><option value="en">English</option><option value="gu">ગુજરાતી (Gujarati)</option><option value="hi">हिन्दी (Hindi)</option></select>
+      <button onclick="registerOrLogin('register')">Register</button>
+      <button onclick="registerOrLogin('login')">Login</button>
+      <button onclick="createChar()">Create Avatar</button>
+      <pre id="authOut">Not signed in.</pre>
+    </div>
+
+    <div class="card">
+      <h3>2. Talk to Suryanagar NPCs</h3>
+      <select id="npcId">
+        <option value="dr_meera">Dr. Meera Patel (Innovation Dome)</option>
+        <option value="kaka_chai">Ramesh Kaka (Skyline Solar Cafe)</option>
+        <option value="officer_kabir">Inspector Kabir Rao (Civic Fountain)</option>
+      </select>
+      <select id="npcChoice">
+        <option value="greeting">Greet</option>
+        <option value="joke">Hear a Joke</option>
+        <option value="help">Help with Side Quest (Earn Rewards)</option>
+      </select>
+      <button onclick="talkNpc()">Interact with NPC</button>
+      <pre id="npcOut">Select an NPC and interact.</pre>
+    </div>
+
+    <div class="card">
+      <h3>3. Career &amp; Moderation Tester</h3>
+      <select id="careerId">
+        <option value="scientist">Scientist / Researcher</option>
+        <option value="civil_admin">Civil Administrator (IAS-Inspired)</option>
+        <option value="business_owner">Business Owner</option>
+      </select>
+      <button onclick="selectCareer()">Start Career</button>
+      <input id="chatMsg" placeholder="Test chat message (GU / HI / EN)">
+      <button onclick="testChat()">Send via Safety Filter</button>
+      <pre id="careerOut">Career &amp; moderation output.</pre>
+    </div>
+  </div>
+
+<script>
+  let TOKEN = "";
+  function base() { return document.getElementById('apiBase').value.replace(/\/$/, ''); }
+  async function callApi(path, method, body, outId) {
+    const headers = { 'Content-Type': 'application/json' };
+    if (TOKEN) headers['Authorization'] = 'Bearer ' + TOKEN;
+    try {
+      const res = await fetch(base() + path, { method, headers, body: body ? JSON.stringify(body) : undefined });
+      const data = await res.json();
+      if (data.access_token) TOKEN = data.access_token;
+      document.getElementById(outId).textContent = JSON.stringify(data, null, 2);
+      return data;
+    } catch (e) {
+      document.getElementById(outId).textContent = 'Error: ' + e.message;
     }
-  </script>
+  }
+  function registerOrLogin(mode) {
+    callApi('/api/v1/auth/' + mode, 'POST', {
+      username: document.getElementById('uName').value,
+      password: document.getElementById('uPass').value,
+      preferred_language: document.getElementById('uLang').value
+    }, 'authOut');
+  }
+  function createChar() {
+    callApi('/api/v1/players/character', 'POST', {
+      display_name: document.getElementById('uName').value || 'Citizen',
+      avatar_method: 'manual',
+      avatar_config: { hair: 'Modern Layered' }
+    }, 'authOut');
+  }
+  function talkNpc() {
+    callApi('/api/v1/npcs/talk', 'POST', {
+      npc_id: document.getElementById('npcId').value,
+      choice: document.getElementById('npcChoice').value,
+      language: document.getElementById('uLang').value
+    }, 'npcOut');
+  }
+  function selectCareer() {
+    callApi('/api/v1/careers/select', 'POST', { career_id: document.getElementById('careerId').value }, 'careerOut');
+  }
+  function testChat() {
+    callApi('/api/v1/moderation/check-message', 'POST', { channel: 'public_chat', message: document.getElementById('chatMsg').value }, 'careerOut');
+  }
+</script>
 </body>
 </html>
