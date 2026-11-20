@@ -1,0 +1,28 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/PlayerHUD.gd" id="1_hud"]
+
+[node name="PlayerHUD" type="CanvasLayer"]
+script = ExtResource("1_hud")
+
+[node name="TopBar" type="HBoxContainer" parent="."]
+offset_left = 16.0
+offset_top = 12.0
+offset_right = 760.0
+offset_bottom = 48.0
+
+[node name="MoneyLabel" type="Label" parent="TopBar"]
+layout_mode = 2
+text = "Money: 1000"
+
+[node name="KnowledgeLabel" type="Label" parent="TopBar"]
+layout_mode = 2
+text = "Knowledge: 0"
+
+[node name="TrustLabel" type="Label" parent="TopBar"]
+layout_mode = 2
+text = "Public Trust: 10"
+
+[node name="WellbeingLabel" type="Label" parent="TopBar"]
+layout_mode = 2
+text = "Happiness: 75%"

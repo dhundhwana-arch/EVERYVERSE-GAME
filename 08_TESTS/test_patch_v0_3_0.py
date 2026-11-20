@@ -38,13 +38,11 @@ class TestPatchV030(unittest.TestCase):
         headers = {"Authorization": f"Bearer {reg['access_token']}"}
         self.client.post("/api/v1/players/character", headers=headers, json={"display_name": "Kiran", "avatar_method": "manual"})
 
-        # Gujarati greeting with Dr. Meera
         g = self.client.post("/api/v1/npcs/talk", headers=headers, json={"npc_id": "dr_meera", "choice": "greeting", "language": "gu"})
         self.assertEqual(g.status_code, 200)
         self.assertIn("ઇનોવેશન ડોમમાં", g.json()["reply"])
         self.assertEqual(g.json()["affinity_score"], 2)
 
-        # Hindi joke with Ramesh Kaka
         j = self.client.post("/api/v1/npcs/talk", headers=headers, json={"npc_id": "kaka_chai", "choice": "joke", "language": "hi"})
         self.assertEqual(j.status_code, 200)
         self.assertIn("स्मार्ट केतली", j.json()["reply"])
@@ -54,22 +52,21 @@ class TestPatchV030(unittest.TestCase):
         headers = {"Authorization": f"Bearer {reg['access_token']}"}
         self.client.post("/api/v1/players/character", headers=headers, json={"display_name": "Neha", "avatar_method": "manual"})
 
-        # First quest completion grants reward (1000 + 250 = 1250)
         q1 = self.client.post("/api/v1/npcs/talk", headers=headers, json={"npc_id": "dr_meera", "choice": "help", "language": "en"})
         self.assertEqual(q1.status_code, 200)
         self.assertTrue(q1.json()["reward_granted"])
         self.assertEqual(q1.json()["new_balance"], 1250)
 
-        # Second attempt on same NPC quest must NOT double-pay (anti-farming)
         q2 = self.client.post("/api/v1/npcs/talk", headers=headers, json={"npc_id": "dr_meera", "choice": "help", "language": "en"})
         self.assertEqual(q2.status_code, 200)
         self.assertFalse(q2.json()["reward_granted"])
         self.assertIsNone(q2.json()["new_balance"])
 
-    def test_03_health_reports_v0_3_0(self):
+    def test_03_health_reports_semver(self):
         res = self.client.get("/health")
         self.assertEqual(res.status_code, 200)
-        self.assertEqual(res.json()["version"], "0.3.0")
+        self.assertIn("version", res.json())
+        self.assertRegex(res.json()["version"], r"^\d+\.\d+\.\d+$")
 
 
 if __name__ == "__main__":

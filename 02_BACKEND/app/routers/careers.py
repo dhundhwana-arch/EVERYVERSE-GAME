@@ -1,6 +1,7 @@
 import json
 import secrets
 import time
+from pathlib import Path
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
 
@@ -9,32 +10,8 @@ from app.security import get_current_user, record_audit_log
 
 router = APIRouter(prefix="/careers", tags=["Careers & National Leadership"])
 
-CAREER_REGISTRY = {
-    "scientist": {
-        "title": "Scientist / Researcher",
-        "category": "Science & Research",
-        "stages": ["Research Fundamentals", "Scientific Problem Solving", "Research Proposal"],
-        "reward_money": 800,
-        "reward_knowledge": 40,
-        "reward_reputation": 25,
-    },
-    "civil_admin": {
-        "title": "Civil Administrator (IAS-Inspired)",
-        "category": "Government & Administration",
-        "stages": ["Constitutional Literacy", "Administrative Case Study", "Civil Service Interview"],
-        "reward_money": 750,
-        "reward_knowledge": 35,
-        "reward_reputation": 35,
-    },
-    "business_owner": {
-        "title": "Business Owner / Entrepreneur",
-        "category": "Business & Finance",
-        "stages": ["Market Feasibility Plan", "Financial Budgeting", "Operations Launch"],
-        "reward_money": 1100,
-        "reward_knowledge": 25,
-        "reward_reputation": 20,
-    },
-}
+_REGISTRY_PATH = Path(__file__).resolve().parent.parent / "data" / "career_registry.json"
+CAREER_REGISTRY: dict = json.loads(_REGISTRY_PATH.read_text(encoding="utf-8"))
 
 
 class CareerSelectRequest(BaseModel):
@@ -54,8 +31,11 @@ class CandidateRegisterRequest(BaseModel):
 
 
 @router.get("/registry")
-def list_careers():
-    return {"careers": CAREER_REGISTRY, "onboarding_choices": ["explore_all", "not_sure_yet", "create_own_path", "just_explore_world"]}
+def list_careers(category: str | None = None):
+    if category:
+        filtered = {k: v for k, v in CAREER_REGISTRY.items() if v["category"].lower() == category.lower()}
+        return {"count": len(filtered), "careers": filtered, "onboarding_choices": ["explore_all", "not_sure_yet", "create_own_path", "just_explore_world"]}
+    return {"count": len(CAREER_REGISTRY), "careers": CAREER_REGISTRY, "onboarding_choices": ["explore_all", "not_sure_yet", "create_own_path", "just_explore_world"]}
 
 
 @router.post("/select")

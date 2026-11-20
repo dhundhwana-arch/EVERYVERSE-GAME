@@ -14,3 +14,8 @@ NPC_GREET,Greet,નમસ્તે કહો,नमस्ते कहें
 NPC_JOKE,Hear a Joke,રમૂજ સાંભળો,मज़ाक सुनें
 NPC_HELP,Help with Quest,મદદ કરો (ક્વેસ્ટ),मदद करें (क्वेस्ट)
 BTN_CLOSE,Close,બંધ કરો,बंद करें
+CAREER_PORTAL_TITLE,Choose Your Career Path (30 Professions),તમારું કરિયર પસંદ કરો (૩૦ વ્યવસાયો),अपना करियर चुनें (30 व्यवसाय)
+BTN_START_CAREER,Start Selected Career,પસંદ કરેલ કરિયર શરૂ કરો,चुना हुआ करियर शुरू करें
+HUD_KNOWLEDGE,Knowledge,જ્ઞાન,ज्ञान
+HUD_TRUST,Public Trust,જાહેર વિશ્વાસ,जनता का विश्वास
+HUD_HAPPINESS,Happiness,ખુશી,खुशी
