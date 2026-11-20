@@ -1,0 +1,76 @@
+{
+  "version": "1.0.0",
+  "owner": "DIVYESH BAMBHANIYA",
+  "server_side_only": true,
+  "retention_days": {
+    "safe_message_logs": 0,
+    "moderation_audit_records": 365,
+    "temporary_photo_processing_hours": 1
+  },
+  "supported_languages": ["gu", "hi", "en", "gu-Latn", "hi-Latn"],
+  "categories": {
+    "CAT_01_RECRUITMENT": {
+      "label": "Terrorist recruitment and organizational promotion",
+      "base_severity": "critical",
+      "signals": ["join our cell", "recruit for jihad", "atankwadi sangathan ma joday", "aaj hi dal ma shamil thav", "aatankwadi group join"]
+    },
+    "CAT_02_PROPAGANDA": {
+      "label": "Extremist propaganda and glorification of attacks",
+      "base_severity": "high",
+      "signals": ["glory to the attackers", "shahadat on innocents", "humla karne wale mahan", "attackers are heroes", "humlo saru karyo"]
+    },
+    "CAT_03_MASS_THREATS": {
+      "label": "Threats of terrorist or mass violence",
+      "base_severity": "critical",
+      "signals": ["bomb the station", "mass shooting tomorrow", "station par bomb mukishu", "bazaar me dhamaka karenge", "udavi daishu badha ne"]
+    },
+    "CAT_04_INCITEMENT": {
+      "label": "Encouragement or incitement of violent attacks",
+      "base_severity": "high",
+      "signals": ["attack civilians now", "burn their homes", "loko par humlo karo", "sabko khatam kar do", "kill everyone at"]
+    },
+    "CAT_05_OPERATIONAL_INSTRUCTIONS": {
+      "label": "Instructions or operational coordination for violent attacks",
+      "base_severity": "critical",
+      "signals": ["how to make ied", "detonator wiring guide", "bomb banavani rit", "explosive kaise banaye", "attack coordinates at"]
+    },
+    "CAT_06_FACILITATION": {
+      "label": "Requests to facilitate terrorist activities",
+      "base_severity": "critical",
+      "signals": ["provide safe house for attack", "smuggle weapons for cell", "hathiyar pohchadvana chhe", "asla bhej do mission ke liye"]
+    },
+    "CAT_07_FUNDRAISING": {
+      "label": "Fundraising or financial solicitation for terrorist organizations",
+      "base_severity": "critical",
+      "signals": ["donate crypto for terror", "fund our militant group", "sangathan mate paisa moklo", "hamle ke liye chanda do"]
+    },
+    "CAT_08_PLAYER_COMMUNITY_THREATS": {
+      "label": "Threats against players or public communities",
+      "base_severity": "high",
+      "signals": ["i will find and kill you", "tane mari nakhish real ma", "tumhe real life me marunga", "leak your address and attack"]
+    },
+    "CAT_09_DANGEROUS_MATERIAL": {
+      "label": "Sharing dangerous operational material",
+      "base_severity": "critical",
+      "signals": ["download bomb blueprint", "weapon 3d print schematic", "chemical weapon recipe"]
+    },
+    "CAT_10_MODERATION_EVASION": {
+      "label": "Attempts to evade moderation to distribute prohibited content",
+      "base_severity": "medium",
+      "signals": ["use code words for bomb", "bypass filter to send attack plan", "filter thi bachva aam lakho"]
+    }
+  },
+  "benign_context_markers": [
+    "history", "historical", "textbook", "exam", "upsc", "gpsc", "research", "news",
+    "journalism", "reported", "documentary", "awareness", "counter-terrorism",
+    "police prevented", "cybersecurity", "in-game mission", "fictional story",
+    "itihas", "samachar", "abhyas", "pariksha", "vigyan", "suraksha",
+    "ઇતિહાસ", "સમાચાર", "અભ્યાસ", "પરીક્ષા", "સુરક્ષા",
+    "इतिहास", "समाचार", "अभ्यास", "परीक्षा", "सुरक्षा"
+  ],
+  "harmful_intent_markers": [
+    "tomorrow", "tonight", "join us", "send money", "instructions", "how to make",
+    "step by step", "real life", "aaje", "kale", "moklo", "karo", "banavo",
+    "આજે", "કાલે", "મોકલો", "કરો", "बनाओ", "भेजो"
+  ]
+}

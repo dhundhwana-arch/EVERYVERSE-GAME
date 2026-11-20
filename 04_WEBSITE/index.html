@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LIFEVERSE 2070 — Official Portal | CREATED BY DIVYESH BAMBHANIYA</title>
+<style>
+  body { font-family: system-ui, sans-serif; background: #0E1013; color: #F9FAFB; margin: 0; padding: 40px 24px; max-width: 900px; margin-inline: auto; line-height: 1.6; }
+  h1 { color: #38BDF8; margin-bottom: 8px; }
+  .credit { color: #FCD34D; font-family: monospace; font-size: 14px; margin-bottom: 24px; }
+  .box { border: 1px solid #262B35; padding: 20px; border-radius: 8px; margin-top: 20px; background: #141820; }
+  button { background: #38BDF8; color: #0E1013; border: none; padding: 10px 18px; font-weight: 700; border-radius: 6px; cursor: pointer; }
+  input { padding: 10px; border-radius: 6px; border: 1px solid #262B35; background: #0E1013; color: #F9FAFB; width: 260px; }
+</style>
+</head>
+<body>
+  <h1>LIFEVERSE 2070</h1>
+  <div class="credit">CREATED BY DIVYESH BAMBHANIYA</div>
+  <p>An Original Open-World Life Simulation, Virtual Society &amp; Career Universe supporting Gujarati, Hindi, and English.</p>
+
+  <div class="box">
+    <h3>Live Backend Health Check</h3>
+    <input id="apiUrl" value="http://127.0.0.1:8000" placeholder="Backend URL">
+    <button onclick="checkHealth()">Check API Status</button>
+    <pre id="statusOut">Click to verify backend connection...</pre>
+  </div>
+
+  <script>
+    async function checkHealth() {
+      const url = document.getElementById('apiUrl').value.replace(/\/$/, '');
+      const out = document.getElementById('statusOut');
+      try {
+        const res = await fetch(url + '/health');
+        out.textContent = JSON.stringify(await res.json(), null, 2);
+      } catch (e) {
+        out.textContent = 'Connection failed: ' + e.message;
+      }
+    }
+  </script>
+</body>
+</html>

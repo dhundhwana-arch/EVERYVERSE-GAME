@@ -1,0 +1,19 @@
+services:
+  - type: web
+    name: lifeverse-2070-api
+    runtime: python
+    rootDir: 02_BACKEND
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /health
+    envVars:
+      - key: LIFEVERSE_ENV
+        value: production
+      - key: SECRET_KEY
+        generateValue: true
+      - key: DATABASE_URL
+        sync: false
+      - key: FOUNDER_USERNAME
+        value: divyesh_bambhaniya
+      - key: MODERATION_CONFIG_PATH
+        value: ../06_SECURITY/private_moderation_config.json

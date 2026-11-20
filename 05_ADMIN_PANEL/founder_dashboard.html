@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LIFEVERSE 2070 — Private Founder Dashboard</title>
+<style>
+  body { font-family: system-ui, sans-serif; background: #0E1013; color: #F9FAFB; margin: 0; padding: 36px 24px; max-width: 960px; margin-inline: auto; }
+  h1 { color: #FCD34D; margin-bottom: 4px; }
+  .panel { border: 1px solid #262B35; background: #141820; padding: 20px; border-radius: 8px; margin-top: 20px; }
+  input, button { padding: 10px 14px; border-radius: 6px; margin-right: 8px; }
+  input { background: #0E1013; color: #F9FAFB; border: 1px solid #262B35; }
+  button { background: #38BDF8; color: #0E1013; border: none; font-weight: 700; cursor: pointer; }
+  pre { overflow-x: auto; font-size: 13px; color: #D1D5DB; }
+</style>
+</head>
+<body>
+  <h1>Founder &amp; Moderation Dashboard</h1>
+  <p>CREATED BY DIVYESH BAMBHANIYA · Role-Based Access Control (Founder / Moderator Only)</p>
+  <div class="panel">
+    <input id="api" value="http://127.0.0.1:8000/api/v1" placeholder="API Base URL">
+    <input id="token" type="password" placeholder="Founder JWT Token">
+    <button onclick="loadDashboard()">Load Overview &amp; Moderation Queue</button>
+    <pre id="out">Authenticate as Founder to inspect metrics, audit logs, and moderation events.</pre>
+  </div>
+  <script>
+    async function loadDashboard() {
+      const api = document.getElementById('api').value.replace(/\/$/, '');
+      const token = document.getElementById('token').value;
+      const headers = { Authorization: 'Bearer ' + token };
+      const [ov, mod] = await Promise.all([
+        fetch(api + '/admin/overview', { headers }).then(r => r.json()),
+        fetch(api + '/moderation/dashboard', { headers }).then(r => r.json()),
+      ]);
+      document.getElementById('out').textContent = JSON.stringify({ overview: ov, moderation: mod }, null, 2);
+    }
+  </script>
+</body>
+</html>

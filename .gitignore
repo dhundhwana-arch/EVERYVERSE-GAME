@@ -1,0 +1,17 @@
+# Python & Local DB
+__pycache__/
+*.py[cod]
+*.db
+*.sqlite3
+.env
+.venv/
+venv/
+
+# Godot 4
+01_GAME/.godot/
+01_GAME/export_presets.cfg
+
+# Backups & Logs
+*.bak
+*.log
+03_DATABASE/backup/snapshots/
