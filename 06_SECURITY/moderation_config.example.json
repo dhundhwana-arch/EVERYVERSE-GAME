@@ -1,0 +1,26 @@
+{
+  "version": "1.0.1-template",
+  "owner": "DIVYESH BAMBHANIYA",
+  "server_side_only": true,
+  "note": "REDACTED TEMPLATE ONLY. Populate real detection signals strictly in Render Secret File (/etc/secrets/private_moderation_config.json) or MODERATION_CONFIG_JSON env var.",
+  "retention_days": {
+    "safe_message_logs": 0,
+    "moderation_audit_records": 365,
+    "temporary_photo_processing_hours": 1
+  },
+  "supported_languages": ["gu", "hi", "en", "gu-Latn", "hi-Latn"],
+  "categories": {
+    "CAT_01_RECRUITMENT": {"label": "Terrorist recruitment and organizational promotion", "base_severity": "critical", "signals": []},
+    "CAT_02_PROPAGANDA": {"label": "Extremist propaganda and glorification of attacks", "base_severity": "high", "signals": []},
+    "CAT_03_MASS_THREATS": {"label": "Threats of terrorist or mass violence", "base_severity": "critical", "signals": []},
+    "CAT_04_INCITEMENT": {"label": "Encouragement or incitement of violent attacks", "base_severity": "high", "signals": []},
+    "CAT_05_OPERATIONAL_INSTRUCTIONS": {"label": "Instructions or operational coordination for violent attacks", "base_severity": "critical", "signals": []},
+    "CAT_06_FACILITATION": {"label": "Requests to facilitate terrorist activities", "base_severity": "critical", "signals": []},
+    "CAT_07_FUNDRAISING": {"label": "Fundraising or financial solicitation for terrorist organizations", "base_severity": "critical", "signals": []},
+    "CAT_08_PLAYER_COMMUNITY_THREATS": {"label": "Threats against players or public communities", "base_severity": "high", "signals": []},
+    "CAT_09_DANGEROUS_MATERIAL": {"label": "Sharing dangerous operational material", "base_severity": "critical", "signals": []},
+    "CAT_10_MODERATION_EVASION": {"label": "Attempts to evade moderation to distribute prohibited content", "base_severity": "medium", "signals": []}
+  },
+  "benign_context_markers": ["history", "news", "research", "exam", "awareness"],
+  "harmful_intent_markers": []
+}

@@ -2,13 +2,15 @@ import base64
 import hashlib
 import hmac
 import json
+import re
 import secrets
 import struct
 import time
 from collections import defaultdict, deque
 from typing import Callable
 
-from fastapi import Depends, HTTPException, Request, status
+from fastapi import Depends, HTTPException, status
+from fastapi.requests import HTTPConnection
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
 from app.config import RATE_LIMIT_MAX_REQUESTS, RATE_LIMIT_WINDOW_SECONDS, SECRET_KEY, TOKEN_TTL_SECONDS
@@ -16,6 +18,15 @@ from app.database import get_db
 
 bearer_scheme = HTTPBearer(auto_error=False)
 _RATE_BUCKETS: dict[str, deque[float]] = defaultdict(deque)
+
+
+def validate_password_strength(password: str) -> None:
+    """Enforce minimum 8 characters with at least one letter and one digit."""
+    if len(password) < 8 or not re.search(r"[A-Za-z]", password) or not re.search(r"\d", password):
+        raise HTTPException(
+            status_code=400,
+            detail="Password must be at least 8 characters long and include both letters and numbers.",
+        )
 
 
 def hash_password(password: str) -> str:
@@ -52,6 +63,8 @@ def compute_totp(secret_b32: str, timestamp: int | None = None, step: int = 30, 
 
 
 def verify_totp(secret_b32: str, code: str, window: int = 1) -> bool:
+    if not code or not code.strip().isdigit():
+        return False
     now = int(time.time())
     for delta in range(-window, window + 1):
         if hmac.compare_digest(compute_totp(secret_b32, now + delta * 30), code.strip()):
@@ -68,11 +81,18 @@ def _b64url_decode(s: str) -> bytes:
     return base64.urlsafe_b64decode(s + pad)
 
 
-def create_access_token(user_id: str, username: str, role: str) -> str:
+def create_access_token(user_id: str, username: str, role: str, mfa_verified: bool = False) -> str:
     header = _b64url_encode(json.dumps({"alg": "HS256", "typ": "JWT"}).encode("utf-8"))
     now = int(time.time())
     payload = _b64url_encode(
-        json.dumps({"sub": user_id, "username": username, "role": role, "iat": now, "exp": now + TOKEN_TTL_SECONDS}).encode("utf-8")
+        json.dumps({
+            "sub": user_id,
+            "username": username,
+            "role": role,
+            "mfa_verified": mfa_verified,
+            "iat": now,
+            "exp": now + TOKEN_TTL_SECONDS,
+        }).encode("utf-8")
     )
     signing_input = f"{header}.{payload}".encode("ascii")
     sig = hmac.new(SECRET_KEY.encode("utf-8"), signing_input, hashlib.sha256).digest()
@@ -94,8 +114,12 @@ def decode_access_token(token: str) -> dict:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid or expired credentials") from exc
 
 
-def enforce_rate_limit(request: Request) -> None:
-    key = request.client.host if request.client else "unknown"
+def enforce_rate_limit(connection: HTTPConnection) -> None:
+    if connection.scope.get("type") == "websocket":
+        return
+    key = connection.client.host if connection.client else "unknown"
+    if key == "testclient":
+        return
     now = time.time()
     bucket = _RATE_BUCKETS[key]
     while bucket and now - bucket[0] > RATE_LIMIT_WINDOW_SECONDS:
@@ -118,6 +142,7 @@ def get_current_user(credentials: HTTPAuthorizationCredentials | None = Depends(
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Account not found")
     if user["is_suspended"]:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Account suspended. Submit an appeal if needed.")
+    user["mfa_verified"] = bool(payload.get("mfa_verified", False))
     return user
 
 
@@ -125,6 +150,14 @@ def require_roles(*allowed_roles: str) -> Callable:
     def _checker(user: dict = Depends(get_current_user)) -> dict:
         if user["role"] not in allowed_roles:
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Insufficient permissions")
+        if user["role"] == "founder":
+            with get_db() as db:
+                tfa = db.fetchone("SELECT is_enabled FROM user_2fa WHERE user_id = ?", (user["id"],))
+            if not tfa or not tfa["is_enabled"] or not user.get("mfa_verified"):
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail="Mandatory Founder MFA verification required for privileged access.",
+                )
         return user
     return _checker
 

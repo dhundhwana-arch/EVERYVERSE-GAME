@@ -2,7 +2,7 @@ from contextlib import asynccontextmanager
 from fastapi import Depends, FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.config import OFFICIAL_BRANDING
+from app.config import ALLOWED_ORIGINS, OFFICIAL_BRANDING
 from app.database import init_db
 from app.routers import (
     admin,
@@ -32,18 +32,19 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(
     title="LIFEVERSE 2070 Backend API",
-    version="1.0.0",
-    description=f"Production Server-Authoritative API for LIFEVERSE 2070 — {OFFICIAL_BRANDING}",
+    version="1.0.1",
+    description=f"Production-Hardened Server-Authoritative API for LIFEVERSE 2070 — {OFFICIAL_BRANDING}",
     lifespan=lifespan,
     dependencies=[Depends(enforce_rate_limit)],
 )
 
+# SECURITY FIX: Explicit allowed origins only (no wildcard '*' with allow_credentials=True)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=ALLOWED_ORIGINS,
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allow_headers=["Authorization", "Content-Type"],
 )
 
 
@@ -53,12 +54,13 @@ async def add_security_headers(request: Request, call_next):
     response.headers["X-Content-Type-Options"] = "nosniff"
     response.headers["X-Frame-Options"] = "DENY"
     response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+    response.headers["Cache-Control"] = "no-store"
     return response
 
 
 @app.get("/health")
 def health():
-    return {"status": "ok", "version": "1.0.0", "project": "LIFEVERSE 2070", "branding": OFFICIAL_BRANDING}
+    return {"status": "ok", "version": "1.0.1", "project": "LIFEVERSE 2070", "branding": OFFICIAL_BRANDING}
 
 
 app.include_router(auth.router, prefix="/api/v1")

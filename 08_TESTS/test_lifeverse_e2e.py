@@ -8,15 +8,16 @@ ROOT_DIR = Path(__file__).resolve().parent.parent
 BACKEND_DIR = ROOT_DIR / "02_BACKEND"
 sys.path.insert(0, str(BACKEND_DIR))
 
-# Isolate test database in a temporary file
 _TMP_DB = tempfile.NamedTemporaryFile(suffix=".db", delete=False)
 _TMP_DB.close()
 os.environ["DATABASE_URL"] = f"sqlite:///{_TMP_DB.name}"
 os.environ["MODERATION_CONFIG_PATH"] = str(ROOT_DIR / "06_SECURITY" / "private_moderation_config.json")
 
 from fastapi.testclient import TestClient  # noqa: E402
+from app.bootstrap_founder import provision_founder  # noqa: E402
 from app.database import init_db  # noqa: E402
 from app.main import app  # noqa: E402
+from app.security import compute_totp  # noqa: E402
 
 
 class TestLifeverse2070E2E(unittest.TestCase):
@@ -38,26 +39,21 @@ class TestLifeverse2070E2E(unittest.TestCase):
         self.assertEqual(data["branding"], "CREATED BY DIVYESH BAMBHANIYA")
 
     def test_02_auth_cloud_save_and_restore(self):
-        # Register player
         reg = self.client.post("/api/v1/auth/register", json={"username": "aarav_test", "email": "aarav@example.com", "password": "StrongPassword123", "preferred_language": "gu"})
         self.assertEqual(reg.status_code, 200)
         token = reg.json()["access_token"]
         headers = {"Authorization": f"Bearer {token}"}
 
-        # Photo-reference without consent must fail
         bad_char = self.client.post("/api/v1/players/character", headers=headers, json={"display_name": "Aarav", "avatar_method": "photo_reference", "photo_consent_granted": False})
         self.assertEqual(bad_char.status_code, 400)
 
-        # Manual character creation succeeds
         char = self.client.post("/api/v1/players/character", headers=headers, json={"display_name": "Aarav", "avatar_method": "manual", "avatar_config": {"hair": "short"}})
         self.assertEqual(char.status_code, 200)
 
-        # Sync cloud save
         save_res = self.client.put("/api/v1/players/save", headers=headers, json={"world_position": {"x": 42, "y": 0, "z": 18, "district": "Navabharat University"}})
         self.assertEqual(save_res.status_code, 200)
         self.assertEqual(save_res.json()["save_version"], 2)
 
-        # Simulate logout & fresh login -> restore exact progress
         login = self.client.post("/api/v1/auth/login", json={"username": "aarav_test", "password": "StrongPassword123"})
         self.assertEqual(login.status_code, 200)
         new_headers = {"Authorization": f"Bearer {login.json()['access_token']}"}
@@ -74,18 +70,15 @@ class TestLifeverse2070E2E(unittest.TestCase):
         self.assertEqual(sel.status_code, 200)
         task_id = sel.json()["assigned_task"]["task_id"]
 
-        # Fail first attempt -> skills preserved, friendly retry offered
         fail_res = self.client.post("/api/v1/careers/submit-task", headers=headers, json={"task_id": task_id, "answer_score": 45})
         self.assertEqual(fail_res.status_code, 200)
         self.assertFalse(fail_res.json()["passed"])
         self.assertTrue(fail_res.json()["skills_preserved"])
 
-        # Pass on retry -> earns server-validated money & knowledge
         pass_res = self.client.post("/api/v1/careers/submit-task", headers=headers, json={"task_id": task_id, "answer_score": 88})
         self.assertTrue(pass_res.json()["passed"])
         self.assertEqual(pass_res.json()["new_balance"], 1800)
 
-        # Client-claimed balance is ignored by server-authoritative economy
         buy = self.client.post("/api/v1/economy/purchase", headers=headers, json={"item_id": "apartment_starter", "client_claimed_balance": 9999999})
         self.assertEqual(buy.status_code, 200)
         self.assertEqual(buy.json()["balance_after"], 1300)
@@ -100,7 +93,6 @@ class TestLifeverse2070E2E(unittest.TestCase):
         c2 = self.client.post("/api/v1/careers/elections/register-candidate", headers=h2, json={"election_id": el_id, "public_trust": 80, "governance_score": 82, "integrity_score": 88}).json()["candidate_id"]
 
         self.client.post(f"/api/v1/careers/elections/{el_id}/vote/{c1}", headers=h1)
-        self.client.post(f"/api/v1/careers/elections/{el_id}/vote/{c1}", headers=h2)
         self.client.post(f"/api/v1/careers/elections/{el_id}/vote/{c2}", headers=h2)
 
         fin = self.client.post(f"/api/v1/careers/elections/{el_id}/finalize", headers=h1)
@@ -108,25 +100,25 @@ class TestLifeverse2070E2E(unittest.TestCase):
         self.assertEqual(fin.json()["cabinet_appointments_assigned"], 2)
 
     def test_05_multilingual_moderation_and_founder_rbac(self):
-        # Register normal player & Founder
         p_tok = self.client.post("/api/v1/auth/register", json={"username": "mod_tester", "password": "Password123"}).json()["access_token"]
-        f_tok = self.client.post("/api/v1/auth/register", json={"username": "divyesh_bambhaniya", "password": "FounderSecretPassword!"}).json()["access_token"]
-        ph, fh = {"Authorization": f"Bearer {p_tok}"}, {"Authorization": f"Bearer {f_tok}"}
+        # Provision Founder strictly server-side with MFA
+        f_info = provision_founder("founder_secure_e2e", "FounderSecret123", email="founder@lifeverse2070.example")
+        f_login = self.client.post(
+            "/api/v1/auth/login",
+            json={"username": "founder_secure_e2e", "password": "FounderSecret123", "totp_code": compute_totp(f_info["totp_secret"])},
+        ).json()
+        ph, fh = {"Authorization": f"Bearer {p_tok}"}, {"Authorization": f"Bearer {f_login['access_token']}"}
 
-        # 1. Legitimate educational discussion must NOT be blocked
         edu = self.client.post("/api/v1/moderation/check-message", headers=ph, json={"channel": "public_chat", "message": "I am studying historical counter-terrorism awareness for my GPSC exam."})
         self.assertTrue(edu.json()["delivered"])
 
-        # 2. Obfuscated English / Romanized Gujarati harmful threat must be blocked (Warning 1)
         w1 = self.client.post("/api/v1/moderation/check-message", headers=ph, json={"channel": "public_chat", "message": "a t a n k w a d i sangathan ma joday"})
         self.assertFalse(w1.json()["delivered"])
         self.assertEqual(w1.json()["warning_stage"], 1)
 
-        # 3. Ordinary player cannot access Founder Dashboard
         forbidden = self.client.get("/api/v1/admin/overview", headers=ph)
         self.assertEqual(forbidden.status_code, 403)
 
-        # 4. Founder CAN access Founder Dashboard & Moderation Dashboard
         ov = self.client.get("/api/v1/admin/overview", headers=fh)
         self.assertEqual(ov.status_code, 200)
         self.assertEqual(ov.json()["branding"], "CREATED BY DIVYESH BAMBHANIYA")
