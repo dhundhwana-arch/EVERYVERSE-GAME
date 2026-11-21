@@ -15,8 +15,10 @@ os.environ["MODERATION_CONFIG_PATH"] = str(ROOT_DIR / "06_SECURITY" / "private_m
 
 from fastapi.testclient import TestClient  # noqa: E402
 from backup_and_restore import create_sqlite_backup, restore_sqlite_backup  # noqa: E402
+from app.bootstrap_founder import provision_founder  # noqa: E402
 from app.database import init_db  # noqa: E402
 from app.main import app  # noqa: E402
+from app.security import compute_totp  # noqa: E402
 
 
 class TestPatchV020(unittest.TestCase):
@@ -92,34 +94,32 @@ class TestPatchV020(unittest.TestCase):
 
     def test_04_moderation_stages_appeals_emergency_and_unicode(self):
         _, _, ph = self._register_and_char("mod_stages_user")
-        f_tok = self.client.post("/api/v1/auth/register", json={"username": "divyesh_bambhaniya", "password": "FounderPass!"}).json()["access_token"]
+        f_info = provision_founder("founder_mod_v020", "FounderPass123", email="founder_mod@lifeverse2070.example")
+        f_tok = self.client.post(
+            "/api/v1/auth/login",
+            json={"username": "founder_mod_v020", "password": "FounderPass123", "totp_code": compute_totp(f_info["totp_secret"])},
+        ).json()["access_token"]
         fh = {"Authorization": f"Bearer {f_tok}"}
 
-        # Gujarati & Devanagari safe educational context allowed
         gu_safe = self.client.post("/api/v1/moderation/check-message", headers=ph, json={"channel": "public_chat", "message": "ગુજરાતનો ઇતિહાસ અને સુરક્ષા અભ્યાસ"})
         self.assertTrue(gu_safe.json()["delivered"])
         hi_safe = self.client.post("/api/v1/moderation/check-message", headers=ph, json={"channel": "public_chat", "message": "इतिहास और परीक्षा की तैयारी"})
         self.assertTrue(hi_safe.json()["delivered"])
 
-        # Stage 1 warning
         s1 = self.client.post("/api/v1/moderation/check-message", headers=ph, json={"channel": "public_chat", "message": "attackers are heroes"})
         self.assertEqual(s1.json()["warning_stage"], 1)
 
-        # Stage 2 warning -> temp chat restriction
         s2 = self.client.post("/api/v1/moderation/check-message", headers=ph, json={"channel": "public_chat", "message": "humlo saru karyo"})
         self.assertEqual(s2.json()["warning_stage"], 2)
         ev_id = s2.json()["moderation_event_id"]
 
-        # Restricted user cannot chat
         blocked_chat = self.client.post("/api/v1/moderation/check-message", headers=ph, json={"channel": "public_chat", "message": "hi"})
         self.assertEqual(blocked_chat.status_code, 403)
 
-        # Appeal & Founder overturn
         self.client.post("/api/v1/moderation/appeal", headers=ph, json={"moderation_event_id": ev_id, "reason": "False positive test appeal"})
         rev = self.client.post("/api/v1/moderation/review-appeal", headers=fh, json={"moderation_event_id": ev_id, "appeal_decision": "approved_overturned"})
         self.assertEqual(rev.json()["appeal_status"], "approved_overturned")
 
-        # Imminent emergency threat -> immediate protective suspension
         em = self.client.post("/api/v1/moderation/check-message", headers=ph, json={"channel": "public_chat", "message": "station par bomb mukishu tomorrow"})
         self.assertFalse(em.json()["delivered"])
         after_em = self.client.post("/api/v1/moderation/check-message", headers=ph, json={"channel": "public_chat", "message": "hello"})

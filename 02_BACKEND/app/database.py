@@ -1,36 +1,41 @@
+import os
 import sqlite3
 from contextlib import contextmanager
 from pathlib import Path
 from typing import Any, Iterator
 
-from app.config import BASE_DIR, DATABASE_URL
-
-IS_POSTGRES = DATABASE_URL.startswith("postgres://") or DATABASE_URL.startswith("postgresql://")
-
-if IS_POSTGRES:
-    import psycopg2
-    import psycopg2.extras
+from app.config import BASE_DIR, validate_production_config
 
 
-def _sqlite_path() -> str:
-    if DATABASE_URL.startswith("sqlite:///"):
-        return DATABASE_URL.replace("sqlite:///", "", 1)
+def _current_db_url() -> str:
+    env = os.getenv("LIFEVERSE_ENV", "development").lower()
+    url = os.getenv("DATABASE_URL", "")
+    if env == "production":
+        if not (url.startswith("postgresql://") or url.startswith("postgres://")):
+            raise RuntimeError("PRODUCTION ERROR: Valid PostgreSQL DATABASE_URL is required; SQLite is disabled in production.")
+        return url
+    return url or f"sqlite:///{BASE_DIR / '02_BACKEND' / 'lifeverse_local.db'}"
+
+
+def is_postgres_url(url: str) -> bool:
+    return url.startswith("postgres://") or url.startswith("postgresql://")
+
+
+def _sqlite_path(url: str) -> str:
+    if url.startswith("sqlite:///"):
+        return url.replace("sqlite:///", "", 1)
     return str(BASE_DIR / "02_BACKEND" / "lifeverse_local.db")
 
 
-def _adapt_sql(sql: str) -> str:
-    if IS_POSTGRES:
-        return sql.replace("?", "%s")
-    return sql
-
-
 class DBWrapper:
-    def __init__(self, conn: Any):
+    def __init__(self, conn: Any, postgres: bool):
         self._conn = conn
+        self._postgres = postgres
 
     def execute(self, sql: str, params: tuple = ()) -> Any:
         cur = self._conn.cursor()
-        cur.execute(_adapt_sql(sql), params)
+        adapted = sql.replace("?", "%s") if self._postgres else sql
+        cur.execute(adapted, params)
         return cur
 
     def fetchone(self, sql: str, params: tuple = ()) -> dict | None:
@@ -56,10 +61,13 @@ class DBWrapper:
 
 @contextmanager
 def get_db() -> Iterator[DBWrapper]:
-    if IS_POSTGRES:
-        conn = psycopg2.connect(DATABASE_URL)
+    url = _current_db_url()
+    pg = is_postgres_url(url)
+    if pg:
+        import psycopg2
+        conn = psycopg2.connect(url)
         try:
-            yield DBWrapper(conn)
+            yield DBWrapper(conn, postgres=True)
             conn.commit()
         except Exception:
             conn.rollback()
@@ -67,13 +75,13 @@ def get_db() -> Iterator[DBWrapper]:
         finally:
             conn.close()
     else:
-        path = _sqlite_path()
+        path = _sqlite_path(url)
         Path(path).parent.mkdir(parents=True, exist_ok=True)
         conn = sqlite3.connect(path, check_same_thread=False)
         conn.row_factory = sqlite3.Row
         conn.execute("PRAGMA foreign_keys = ON;")
         try:
-            yield DBWrapper(conn)
+            yield DBWrapper(conn, postgres=False)
             conn.commit()
         except Exception:
             conn.rollback()
@@ -83,12 +91,15 @@ def get_db() -> Iterator[DBWrapper]:
 
 
 def init_db() -> None:
+    validate_production_config()
+    url = _current_db_url()
+    pg = is_postgres_url(url)
     schema_file = (
-        BASE_DIR / "03_DATABASE" / "schemas" / ("001_initial_postgresql.sql" if IS_POSTGRES else "002_sqlite_compatible.sql")
+        BASE_DIR / "03_DATABASE" / "schemas" / ("001_initial_postgresql.sql" if pg else "002_sqlite_compatible.sql")
     )
     sql_script = schema_file.read_text(encoding="utf-8")
     with get_db() as db:
-        if IS_POSTGRES:
+        if pg:
             for stmt in [s.strip() for s in sql_script.split(";") if s.strip()]:
                 db.execute(stmt)
         else:

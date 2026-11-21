@@ -7,6 +7,9 @@ __pycache__/
 .venv/
 venv/
 
+# Private Server-Side Moderation Configuration (NEVER commit to Git)
+06_SECURITY/private_moderation_config.json
+
 # Godot 4
 01_GAME/.godot/
 01_GAME/export_presets.cfg
