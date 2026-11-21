@@ -1,0 +1,20 @@
+name: LIFEVERSE 2070 Automated CI
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  backend-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install backend dependencies
+        run: pip install -r 02_BACKEND/requirements.txt
+      - name: Run full LIFEVERSE 2070 automated test suite
+        run: PYTHONPATH=02_BACKEND python3 -m unittest discover -s 08_TESTS -v

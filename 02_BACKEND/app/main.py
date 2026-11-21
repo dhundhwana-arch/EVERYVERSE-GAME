@@ -4,7 +4,23 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import OFFICIAL_BRANDING
 from app.database import init_db
-from app.routers import admin, auth, careers, economy, life, moderation, npcs, players, property as prop_router, social
+from app.routers import (
+    admin,
+    auth,
+    business,
+    careers,
+    economy,
+    events,
+    justice,
+    life,
+    marketplace,
+    moderation,
+    npcs,
+    players,
+    property as prop_router,
+    research,
+    social,
+)
 from app.security import enforce_rate_limit
 
 
@@ -16,7 +32,7 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(
     title="LIFEVERSE 2070 Backend API",
-    version="0.4.0",
+    version="0.6.0",
     description=f"Server-Authoritative API for LIFEVERSE 2070 — {OFFICIAL_BRANDING}",
     lifespan=lifespan,
     dependencies=[Depends(enforce_rate_limit)],
@@ -33,7 +49,7 @@ app.add_middleware(
 
 @app.get("/health")
 def health():
-    return {"status": "ok", "version": "0.4.0", "project": "LIFEVERSE 2070", "branding": OFFICIAL_BRANDING}
+    return {"status": "ok", "version": "0.6.0", "project": "LIFEVERSE 2070", "branding": OFFICIAL_BRANDING}
 
 
 app.include_router(auth.router, prefix="/api/v1")
@@ -42,6 +58,11 @@ app.include_router(careers.router, prefix="/api/v1")
 app.include_router(economy.router, prefix="/api/v1")
 app.include_router(life.router, prefix="/api/v1")
 app.include_router(prop_router.router, prefix="/api/v1")
+app.include_router(justice.router, prefix="/api/v1")
+app.include_router(business.router, prefix="/api/v1")
+app.include_router(events.router, prefix="/api/v1")
+app.include_router(research.router, prefix="/api/v1")
+app.include_router(marketplace.router, prefix="/api/v1")
 app.include_router(social.router, prefix="/api/v1")
 app.include_router(npcs.router, prefix="/api/v1")
 app.include_router(moderation.router, prefix="/api/v1")

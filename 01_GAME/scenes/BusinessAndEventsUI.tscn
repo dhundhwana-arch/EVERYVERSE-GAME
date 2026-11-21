@@ -1,0 +1,44 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/BusinessAndEventsUI.gd" id="1_be"]
+
+[node name="BusinessAndEventsUI" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+script = ExtResource("1_be")
+
+[node name="VBox" type="VBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -260.0
+offset_top = -170.0
+offset_right = 260.0
+offset_bottom = 170.0
+
+[node name="Header" type="Label" parent="VBox"]
+layout_mode = 2
+text = "BIZ_EVENTS_TITLE"
+horizontal_alignment = 1
+
+[node name="BizNameInput" type="LineEdit" parent="VBox"]
+layout_mode = 2
+placeholder_text = "BIZ_NAME_HINT"
+
+[node name="FoundBizBtn" type="Button" parent="VBox"]
+layout_mode = 2
+text = "BTN_FOUND_STARTUP"
+
+[node name="TriviaBtn" type="Button" parent="VBox"]
+layout_mode = 2
+text = "BTN_PLAY_TRIVIA"
+
+[node name="StatusLabel" type="Label" parent="VBox"]
+layout_mode = 2
+text = ""
+autowrap_mode = 3
