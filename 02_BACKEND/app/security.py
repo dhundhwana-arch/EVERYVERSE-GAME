@@ -3,6 +3,7 @@ import hashlib
 import hmac
 import json
 import secrets
+import struct
 import time
 from collections import defaultdict, deque
 from typing import Callable
@@ -32,6 +33,30 @@ def verify_password(password: str, stored_hash: str) -> bool:
         return hmac.compare_digest(dk.hex(), hex_digest)
     except Exception:
         return False
+
+
+def generate_totp_secret() -> str:
+    return base64.b32encode(secrets.token_bytes(20)).decode("ascii").rstrip("=")
+
+
+def compute_totp(secret_b32: str, timestamp: int | None = None, step: int = 30, digits: int = 6) -> str:
+    ts = int(time.time()) if timestamp is None else timestamp
+    counter = ts // step
+    pad = "=" * (-len(secret_b32) % 8)
+    key = base64.b32decode(secret_b32.upper() + pad, casefold=True)
+    msg = struct.pack(">Q", counter)
+    digest = hmac.new(key, msg, hashlib.sha1).digest()
+    offset = digest[-1] & 0x0F
+    code = (struct.unpack(">I", digest[offset : offset + 4])[0] & 0x7FFFFFFF) % (10**digits)
+    return str(code).zfill(digits)
+
+
+def verify_totp(secret_b32: str, code: str, window: int = 1) -> bool:
+    now = int(time.time())
+    for delta in range(-window, window + 1):
+        if hmac.compare_digest(compute_totp(secret_b32, now + delta * 30), code.strip()):
+            return True
+    return False
 
 
 def _b64url_encode(data: bytes) -> str:

@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>LIFEVERSE 2070 — Private Founder &amp; Moderation Dashboard</title>
+<title>LIFEVERSE 2070 v1.0.0 — Private Founder &amp; 2FA Control Center</title>
 <style>
   :root { --bg:#0E1013; --card:#141820; --line:#262B35; --ink:#F9FAFB; --cyan:#38BDF8; --amber:#FCD34D; }
   body { font-family: system-ui, sans-serif; background:var(--bg); color:var(--ink); margin:0; padding:32px 20px; max-width:1040px; margin-inline:auto; }
@@ -15,16 +15,17 @@
 </style>
 </head>
 <body>
-  <h1>Founder &amp; Moderation Control Center</h1>
-  <p style="color:#9CA3AF;">CREATED BY DIVYESH BAMBHANIYA · RBAC Protected (Founder / Moderator Only · Passwords Never Exposed)</p>
+  <h1>Founder &amp; Moderation Control Center (v1.0.0)</h1>
+  <p style="color:#9CA3AF;">CREATED BY DIVYESH BAMBHANIYA · RBAC + TOTP 2FA Protected · Passwords Never Exposed</p>
 
   <div class="card">
-    <h3>Founder Login</h3>
-    <input id="api" value="http://127.0.0.1:8000/api/v1" style="width:260px;">
+    <h3>Founder Login (with Optional 2FA TOTP)</h3>
+    <input id="api" value="http://127.0.0.1:8000/api/v1" style="width:240px;">
     <input id="fUser" value="divyesh_bambhaniya" placeholder="Founder Username">
     <input id="fPass" type="password" placeholder="Founder Password">
+    <input id="fTotp" placeholder="6-digit 2FA Code (if enabled)" style="width:180px;">
     <button onclick="founderLogin()">Sign In &amp; Load Overview</button>
-    <pre id="overviewOut">Sign in as Founder to view system metrics, audit logs, and moderation events.</pre>
+    <pre id="overviewOut">Sign in as Founder to view live metrics, audit logs, and moderation events.</pre>
   </div>
 
   <div class="card">
@@ -43,16 +44,14 @@
   function apiBase() { return document.getElementById('api').value.replace(/\/$/, ''); }
   async function founderLogin() {
     try {
+      const payload = { username: document.getElementById('fUser').value, password: document.getElementById('fPass').value };
+      const totp = document.getElementById('fTotp').value.trim();
+      if (totp) payload.totp_code = totp;
       const res = await fetch(apiBase() + '/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username: document.getElementById('fUser').value, password: document.getElementById('fPass').value })
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload)
       });
       const auth = await res.json();
-      if (!auth.access_token) {
-        document.getElementById('overviewOut').textContent = JSON.stringify(auth, null, 2);
-        return;
-      }
+      if (!auth.access_token) { document.getElementById('overviewOut').textContent = JSON.stringify(auth, null, 2); return; }
       FOUNDER_TOKEN = auth.access_token;
       const headers = { Authorization: 'Bearer ' + FOUNDER_TOKEN };
       const [ov, mod] = await Promise.all([
@@ -68,10 +67,7 @@
     const res = await fetch(apiBase() + '/moderation/review-appeal', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + FOUNDER_TOKEN },
-      body: JSON.stringify({
-        moderation_event_id: document.getElementById('evId').value,
-        appeal_decision: document.getElementById('decision').value
-      })
+      body: JSON.stringify({ moderation_event_id: document.getElementById('evId').value, appeal_decision: document.getElementById('decision').value })
     });
     document.getElementById('appealOut').textContent = JSON.stringify(await res.json(), null, 2);
   }

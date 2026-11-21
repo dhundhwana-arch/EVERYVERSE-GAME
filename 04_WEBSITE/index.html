@@ -3,69 +3,67 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>LIFEVERSE 2070 — Interactive Player Portal | CREATED BY DIVYESH BAMBHANIYA</title>
+<title>LIFEVERSE 2070 v1.0.0 — Suryanagar Interactive Portal | CREATED BY DIVYESH BAMBHANIYA</title>
 <style>
   :root { --bg:#0E1013; --card:#141820; --line:#262B35; --ink:#F9FAFB; --mute:#9CA3AF; --cyan:#38BDF8; --amber:#FCD34D; }
-  body { font-family: system-ui, sans-serif; background:var(--bg); color:var(--ink); margin:0; padding:32px 20px; max-width:1040px; margin-inline:auto; }
+  body { font-family: system-ui, sans-serif; background:var(--bg); color:var(--ink); margin:0; padding:32px 20px; max-width:1100px; margin-inline:auto; }
   h1 { color:var(--cyan); margin:0 0 4px; }
   .credit { color:var(--amber); font-family:monospace; font-size:13px; margin-bottom:24px; }
-  .grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(300px, 1fr)); gap:18px; }
+  .grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(310px, 1fr)); gap:18px; }
   .card { background:var(--card); border:1px solid var(--line); border-radius:8px; padding:18px; }
   input, select { width:100%; box-sizing:border-box; padding:9px; margin:6px 0; border-radius:6px; border:1px solid var(--line); background:var(--bg); color:var(--ink); }
   button { background:var(--cyan); color:#0E1013; border:none; padding:9px 14px; font-weight:700; border-radius:6px; cursor:pointer; margin:6px 6px 0 0; }
-  pre { background:var(--bg); border:1px solid var(--line); padding:10px; border-radius:6px; overflow:auto; max-height:220px; font-size:12px; color:#D1D5DB; }
+  pre { background:var(--bg); border:1px solid var(--line); padding:10px; border-radius:6px; overflow:auto; max-height:200px; font-size:12px; color:#D1D5DB; }
 </style>
 </head>
 <body>
-  <h1>LIFEVERSE 2070 — Suryanagar Interactive Portal</h1>
-  <div class="credit">CREATED BY DIVYESH BAMBHANIYA · v0.3.0</div>
+  <h1>LIFEVERSE 2070 — Unified v1.0.0 Portal</h1>
+  <div class="credit">CREATED BY DIVYESH BAMBHANIYA · PRODUCTION RELEASE v1.0.0</div>
 
   <div class="card" style="margin-bottom:18px;">
-    <strong>Backend URL:</strong>
+    <strong>Live API Server URL:</strong>
     <input id="apiBase" value="http://127.0.0.1:8000" placeholder="https://your-render-url.onrender.com">
     <button onclick="callApi('/health', 'GET', null, 'healthOut')">Check /health</button>
+    <button onclick="callApi('/api/v1/life/leaderboards', 'GET', null, 'healthOut')">View Fair Leaderboards</button>
+    <button onclick="callApi('/api/v1/careers/registry', 'GET', null, 'healthOut')">30-Career Registry</button>
     <pre id="healthOut">Ready.</pre>
   </div>
 
   <div class="grid">
     <div class="card">
-      <h3>1. Account &amp; Character</h3>
-      <input id="uName" placeholder="Username (e.g. aarav_2070)">
-      <input id="uPass" type="password" placeholder="Password (min 6 chars)">
-      <select id="uLang"><option value="en">English</option><option value="gu">ગુજરાતી (Gujarati)</option><option value="hi">हिन्दी (Hindi)</option></select>
-      <button onclick="registerOrLogin('register')">Register</button>
-      <button onclick="registerOrLogin('login')">Login</button>
+      <h3>1. Account, 2FA &amp; Avatar</h3>
+      <input id="uName" placeholder="Username">
+      <input id="uPass" type="password" placeholder="Password">
+      <input id="uTotp" placeholder="2FA Code (if enabled)">
+      <select id="uLang"><option value="en">English</option><option value="gu">ગુજરાતી</option><option value="hi">हिन्दी</option></select>
+      <button onclick="auth('register')">Register</button>
+      <button onclick="auth('login')">Login</button>
+      <button onclick="callApi('/api/v1/auth/2fa/setup', 'POST', {}, 'authOut')">Setup 2FA</button>
       <button onclick="createChar()">Create Avatar</button>
       <pre id="authOut">Not signed in.</pre>
     </div>
 
     <div class="card">
-      <h3>2. Talk to Suryanagar NPCs</h3>
+      <h3>2. NPCs, Property &amp; Startups</h3>
       <select id="npcId">
         <option value="dr_meera">Dr. Meera Patel (Innovation Dome)</option>
         <option value="kaka_chai">Ramesh Kaka (Skyline Solar Cafe)</option>
         <option value="officer_kabir">Inspector Kabir Rao (Civic Fountain)</option>
       </select>
-      <select id="npcChoice">
-        <option value="greeting">Greet</option>
-        <option value="joke">Hear a Joke</option>
-        <option value="help">Help with Side Quest (Earn Rewards)</option>
-      </select>
-      <button onclick="talkNpc()">Interact with NPC</button>
-      <pre id="npcOut">Select an NPC and interact.</pre>
+      <button onclick="talkNpc('greeting')">Greet</button>
+      <button onclick="talkNpc('help')">Side Quest</button>
+      <button onclick="callApi('/api/v1/property/buy-home', 'POST', {asset_id:'suryanagar_studio'}, 'worldOut')">Buy Studio (600)</button>
+      <button onclick="callApi('/api/v1/business/startup/create', 'POST', {business_name:'Surya Labs', sector:'clean_energy', initial_capital:300}, 'worldOut')">Launch Startup</button>
+      <pre id="worldOut">World activity output.</pre>
     </div>
 
     <div class="card">
-      <h3>3. Career &amp; Moderation Tester</h3>
-      <select id="careerId">
-        <option value="scientist">Scientist / Researcher</option>
-        <option value="civil_admin">Civil Administrator (IAS-Inspired)</option>
-        <option value="business_owner">Business Owner</option>
-      </select>
-      <button onclick="selectCareer()">Start Career</button>
+      <h3>3. Research, Trivia &amp; Safety</h3>
+      <button onclick="callApi('/api/v1/research/projects/start', 'POST', {domain:'semiconductors', title:'2070 Photonic Core'}, 'socOut')">Start Research</button>
+      <button onclick="callApi('/api/v1/events/minigame/trivia', 'POST', {question_id:'q_solar', answer:'solar'}, 'socOut')">Play Festival Trivia</button>
       <input id="chatMsg" placeholder="Test chat message (GU / HI / EN)">
-      <button onclick="testChat()">Send via Safety Filter</button>
-      <pre id="careerOut">Career &amp; moderation output.</pre>
+      <button onclick="callApi('/api/v1/moderation/check-message', 'POST', {channel:'public_chat', message:document.getElementById('chatMsg').value}, 'socOut')">Send via Safety Filter</button>
+      <pre id="socOut">Research, festival &amp; moderation output.</pre>
     </div>
   </div>
 
@@ -80,37 +78,21 @@
       const data = await res.json();
       if (data.access_token) TOKEN = data.access_token;
       document.getElementById(outId).textContent = JSON.stringify(data, null, 2);
-      return data;
     } catch (e) {
       document.getElementById(outId).textContent = 'Error: ' + e.message;
     }
   }
-  function registerOrLogin(mode) {
-    callApi('/api/v1/auth/' + mode, 'POST', {
-      username: document.getElementById('uName').value,
-      password: document.getElementById('uPass').value,
-      preferred_language: document.getElementById('uLang').value
-    }, 'authOut');
+  function auth(mode) {
+    const body = { username: document.getElementById('uName').value, password: document.getElementById('uPass').value };
+    if (mode === 'register') body.preferred_language = document.getElementById('uLang').value;
+    if (mode === 'login' && document.getElementById('uTotp').value) body.totp_code = document.getElementById('uTotp').value;
+    callApi('/api/v1/auth/' + mode, 'POST', body, 'authOut');
   }
   function createChar() {
-    callApi('/api/v1/players/character', 'POST', {
-      display_name: document.getElementById('uName').value || 'Citizen',
-      avatar_method: 'manual',
-      avatar_config: { hair: 'Modern Layered' }
-    }, 'authOut');
+    callApi('/api/v1/players/character', 'POST', { display_name: document.getElementById('uName').value || 'Citizen', avatar_method: 'manual' }, 'authOut');
   }
-  function talkNpc() {
-    callApi('/api/v1/npcs/talk', 'POST', {
-      npc_id: document.getElementById('npcId').value,
-      choice: document.getElementById('npcChoice').value,
-      language: document.getElementById('uLang').value
-    }, 'npcOut');
-  }
-  function selectCareer() {
-    callApi('/api/v1/careers/select', 'POST', { career_id: document.getElementById('careerId').value }, 'careerOut');
-  }
-  function testChat() {
-    callApi('/api/v1/moderation/check-message', 'POST', { channel: 'public_chat', message: document.getElementById('chatMsg').value }, 'careerOut');
+  function talkNpc(choice) {
+    callApi('/api/v1/npcs/talk', 'POST', { npc_id: document.getElementById('npcId').value, choice, language: document.getElementById('uLang').value }, 'worldOut');
   }
 </script>
 </body>
